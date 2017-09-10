@@ -44,13 +44,17 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
-  /**
-  TODO:
+  // State initialization flag.
+  is_initialized_ = false;
 
-  Complete the initialization. See ukf.h for other member properties.
+  // Time stamp of last sensor package received.
+  long long time_us_ = 0;
 
-  Hint: one or more values initialized above might be wildly off...
-  */
+  // Number of state variables.
+  n_x_ = x.rows();
+
+  // Number of states in the augmented state vector.
+  n_aug_ = n_x_ + 2;
 }
 
 UKF::~UKF() {}
@@ -60,12 +64,24 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /**
-  TODO:
+  if(meas_package.sensor_type_ == RADAR && use_radar_ == false) {return;}
+  if(meas_package.sensor_type_ == LASER && use_laser_ == false) {return;}
 
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
-  */
+  if(is_initialized_ == false){ 
+    initialize_state(meas_package);
+  }
+  else{
+    double delta_t_secs = (meas_package - time_us_) * 1e-6;
+    Prediction(delta_t_sec);
+
+    if(meas_package.sensor_type_ == RADAR){ 
+      UpdateRadar(meas_package); 
+    }
+    else if(meas_package.sensor_type_ == LASER){
+      UpdateLidar(meas_package);
+    }
+  }
+  time_us_ = meas_package.timestamp_;
 }
 
 /**
@@ -110,4 +126,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the radar NIS.
   */
+}
+
+void initialize_state(MeasurementPackage meas_package){
+  if(meas_package.sensor_type_ == RADAR){
+
+  }
+
+  else if(meas_package.sensor_type_ == LASER){
+
+  }
 }
