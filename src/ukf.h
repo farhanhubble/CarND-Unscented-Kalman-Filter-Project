@@ -64,6 +64,9 @@ public:
   ///* Augmented state dimension
   int n_aug_;
 
+  ///* Number of sigma points.
+  int n_sigma_;
+
   ///* Sigma point spreading parameter
   double lambda_;
 
@@ -103,7 +106,7 @@ public:
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
-private:
+public:
   void initialize_state(MeasurementPackage meas_package);
 };
 
