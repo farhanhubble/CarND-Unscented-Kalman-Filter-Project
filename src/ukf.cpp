@@ -196,6 +196,7 @@ void UKF::Prediction(double delta_t) {
 
     // Fill in the Sigma point prediction matrix.
     Xsig_pred_.col(i) = X_sigma.col(i) + update + noise;
+<<<<<<< HEAD
 
     // Calculate mean state vector as weighted mean of columns of the 
     // **predicted** sigma points matrix.
@@ -206,6 +207,8 @@ void UKF::Prediction(double delta_t) {
     MatrixXd Error = Xsig_pred_.array().colwise() - x_.array();
     MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
     P_ = WeightedError * Error.transpose();
+=======
+>>>>>>> 10b60cda61c589ed3159bd682c143ce69bbee351
   }
   
 }
