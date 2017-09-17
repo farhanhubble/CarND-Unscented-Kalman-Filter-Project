@@ -212,14 +212,59 @@ void UKF::Prediction(double delta_t) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
-  /**
-  TODO:
+  // Get actual measurement vector z.
+  int n_z_ = meas_package.raw_measurements_.size();
+  VectorXd z = VectorXd(n_z_);
+  for(int i=0; i<n_z_; i++ ){
+    z(i) = meas_package.raw_measurements_[i];
+  }
 
-  Complete this function! Use lidar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
+  // Reuse the **predicted** sigma points from the prediction step to get the 
+  // measurement sigma points Z_sigma. Lidar has 2-dimensional measurement and
+  // measurement noise is additive so no augmentation is performed and the shape
+  // of the sigma point matrix will be (2,2*2+1). In fact LIDAR measures the 
+  // position px and py directly so the predicted measurement sigma points are 
+  // just the top 2 rows of the predicted sigma point matrix Xsig_pred_.
+  
+  MatrixXd Zsig_pred = Xsig_pred_.block(0,0,n_z_,n_sigma_);
 
-  You'll also need to calculate the lidar NIS.
-  */
+  // Calculate mean predicted measument vector z as weighted mean of the
+  // prediction space sigma point matrix Zsig_pred. 
+  VectorXd z_pred = VectorXd(n_z_);
+  z_pred = (Zsig_pred.array().rowwise() * weights_.array().transpose()).rowwise().sum();
+
+  // Compute the measurement noise covariancce matrix R.
+  MatrixXd R = MatrixXd::Zero(n_z_,n_z_);
+  R.diagonal() << std_radr_*std_radr_, std_radphi_*std_radphi_,  std_radrd_*std_radrd_;
+  
+  //Calculate measurement covariance matrix S as weighted covariance of the 
+  // prediction space sigma point matrix Zsig_pred.
+  MatrixXd S = MatrixXd(n_z_,n_z_);
+  MatrixXd Error = Zsig_pred.array().colwise() - z_pred.array();
+  MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
+  S = (WeightedError * Error.transpose()) + R;
+
+  /*------------------------ APPLY ACTUAL UPDATE-------------------------------- */
+  
+  // Calculate the cross correlation matrix Tc of Xsig_pred and Zsig_pred;
+  MatrixXd Tc = MatrixXd(n_x_, n_z_);
+
+  MatrixXd Error_X = Xsig_pred_.array().colwise() - x_.array();
+  Error_X.row(3).unaryExpr(&Tools::NormalizeAngle);
+  MatrixXd WeightedError_X = Error_X.array().rowwise() * weights_.array().transpose();
+  
+  MatrixXd Error_Z = Zsig_pred.array().colwise() - z_pred.array();
+
+  Tc = WeightedError_X * Error_Z.transpose();
+
+
+  // Find kalman gain matrix K.
+  MatrixXd K = Tc * S.inverse(); 
+
+  //update state mean and covariance matrix
+  VectorXd y = z-z_pred;
+  x_ = x_ + K * y;
+  P_ = P_ - K * S * K.transpose();
 }
 
 /**
@@ -235,6 +280,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // Actual measurement vector z.
   int n_z_ = meas_package.raw_measurements_.size();
   VectorXd z = VectorXd(n_z_);
+  for(int i=0; i<n_z_; i++ ){
+    z(i) = meas_package.raw_measurements_[i];
+  }
   
   MatrixXd Zsig_pred = MatrixXd::Zero(n_z_,n_sigma_);
 
@@ -267,14 +315,12 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   VectorXd z_pred = VectorXd(n_z_);
   z_pred = (Zsig_pred.array().rowwise() * weights_.array().transpose()).rowwise().sum();
 
-  //Calculate measurement covariance matrix S as weighted covariance of the 
-  // prediction space sigma point matrix Zsig_pred.
-
   // Compute the measurement noise covariancce matrix R.
   MatrixXd R = MatrixXd::Zero(n_z_,n_z_);
   R.diagonal() << std_radr_*std_radr_, std_radphi_*std_radphi_,  std_radrd_*std_radrd_;
 
-  // Compute the covariance matrix of predicted measurement.
+  //Calculate measurement covariance matrix S as weighted covariance of the 
+  // prediction space sigma point matrix Zsig_pred.
   MatrixXd S = MatrixXd(n_z_,n_z_);
   MatrixXd Error = Zsig_pred.array().colwise() - z_pred.array();
   Error.row(1).unaryExpr(&Tools::NormalizeAngle);
