@@ -16,3 +16,11 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
     * Calculate the RMSE here.
   */
 }
+
+double Tools::NormalizeAngle(const double theta){
+  double result = theta;
+  while(result < -M_PI) result += 2*M_PI;
+  while(result >  M_PI) result -= 2*M_PI;
+
+  return result;
+}
