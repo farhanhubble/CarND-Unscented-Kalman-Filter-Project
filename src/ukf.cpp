@@ -113,13 +113,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-  /**
-  TODO:
-
-  Complete this function! Estimate the object's location. Modify the state
-  vector, x_. Predict sigma points, the state, and the state covariance matrix.
-  */
-
   // Construct augmented mean state vector by appending mean values of tangential.
   // and normal acceleration (=0).
   Eigen::VectorXd x_aug = VectorXd(n_aug_);
@@ -196,7 +189,6 @@ void UKF::Prediction(double delta_t) {
 
     // Fill in the Sigma point prediction matrix.
     Xsig_pred_.col(i) = X_sigma.col(i) + update + noise;
-<<<<<<< HEAD
 
     // Calculate mean state vector as weighted mean of columns of the 
     // **predicted** sigma points matrix.
@@ -207,8 +199,6 @@ void UKF::Prediction(double delta_t) {
     MatrixXd Error = Xsig_pred_.array().colwise() - x_.array();
     MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
     P_ = WeightedError * Error.transpose();
-=======
->>>>>>> 10b60cda61c589ed3159bd682c143ce69bbee351
   }
   
 }
@@ -233,14 +223,74 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
-  /**
-  TODO:
+  // Reuse the **predicted** sigma points from the prediction step to get the 
+  // measurement sigma points Z_sigma. Radar has 3-dimensional measurement and
+  // measurement noise is additive so no augmentation is performed and the shape
+  // of the sigma point matrix will be (3,2*3+1)
 
-  Complete this function! Use radar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
+  // Actual measurement vector z.
+  int n_z_ = meas_package.raw_measurements_.size();
+  VectorXd z = VectorXd(n_z_);
+  
+  MatrixXd Zsig_pred = MatrixXd::Zero(n_z_,n_sigma_);
 
-  You'll also need to calculate the radar NIS.
-  */
+  // Fill in the columns of the measurement sigma points matrix.
+  for(int i=0; i<n_sigma_; i++){
+    double px = Xsig_pred_(0,i);
+    double py = Xsig_pred_(1,i);
+    double v  = Xsig_pred_(2,i);
+    double psi = Xsig_pred_(3,i);
+    double psi_dot = Xsig_pred_(4,i);
+
+    // Calculate prediction space variables.
+    
+    double rho = sqrt(px*px+py*py);
+    // Handle division by zero
+    if(rho == 0){
+      rho = 1e-2;
+    }
+
+    double phi = atan2(py,px);
+    assert((phi <= M_PI) && (phi >= -M_PI)); 
+
+    double rho_dot = (v*cos(psi)*px + v*sin(psi)*py) / rho;
+
+    Zsig_pred.col(i) << rho, phi, rho_dot; 
+  }
+
+  // Calculate mean predicted measument vector z as weighted mean of the
+  // prediction space sigma point matrix Zsig_pred. 
+  VectorXd z_pred = VectorXd(n_z_);
+  z_pred = (Zsig_pred.array().rowwise() * weights_.array().transpose()).rowwise().sum();
+
+  //Calculate measurement covariance matrix S as weighted covariance of the 
+  // prediction space sigma point matrix Zsig_pred.
+
+  // Compute the measurement noise covariancce matrix R.
+  MatrixXd R = MatrixXd::Zero(n_z_,n_z_);
+  R.diagonal() << std_radr_*std_radr_, std_radphi_*std_radphi_,  std_radrd_*std_radrd_;
+
+  // Compute the covariance matrix of predicted measurement.
+  MatrixXd S = MatrixXd(n_z_,n_z_);
+  MatrixXd Error = Zsig_pred.array().colwise() - z_pred.array();
+  MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
+  S = (WeightedError * Error.transpose()) + R;
+
+  /*------------------------ APPLY ACTUAL UPDATE-------------------------------- */
+  
+  // Calculate the cross correlation matrix Tc of Xsig_pred and Zsig_pred;
+  MatrixXd Tc = MatrixXd(n_x_, n_z_);
+  MatrixXd WeightedError_X = (Xsig_pred_.array().colwise() - x_.array()).array().rowwise() * weights_.array().transpose();
+  MatrixXd Error_Z = Zsig_pred.array().colwise() - z_pred.array();
+  Tc = WeightedError_X * Error_Z.transpose();
+
+
+  // Find kalman gain matrix K.
+  MatrixXd K = Tc * S.inverse(); 
+
+  //update state mean and covariance matrix
+  x_ = x_ + K * (z-z_pred);
+  P_ = P_ - K * S * K.transpose();
 }
 
 void UKF::initialize_state(MeasurementPackage meas_package){
