@@ -1,5 +1,6 @@
 #include "ukf.h"
 #include "Eigen/Dense"
+#include "tools.h"
 #include <iostream>
 
 using namespace std;
@@ -193,6 +194,9 @@ void UKF::Prediction(double delta_t) {
     // Calculate mean state vector as weighted mean of columns of the 
     // **predicted** sigma points matrix.
     x_ = ( Xsig_pred_.array().rowwise() * weights_.array().transpose() ).rowwise().sum();
+    // Normalize angles.
+    x_.row(3).unaryExpr(&Tools::NormalizeAngle);
+
 
     // Calculate state covariance matrix as weighted covariance of the rows
     // of the **predicted** sigma points matrix.
@@ -273,6 +277,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // Compute the covariance matrix of predicted measurement.
   MatrixXd S = MatrixXd(n_z_,n_z_);
   MatrixXd Error = Zsig_pred.array().colwise() - z_pred.array();
+  Error.row(1).unaryExpr(&Tools::NormalizeAngle);
   MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
   S = (WeightedError * Error.transpose()) + R;
 
@@ -280,8 +285,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   
   // Calculate the cross correlation matrix Tc of Xsig_pred and Zsig_pred;
   MatrixXd Tc = MatrixXd(n_x_, n_z_);
-  MatrixXd WeightedError_X = (Xsig_pred_.array().colwise() - x_.array()).array().rowwise() * weights_.array().transpose();
+
+  MatrixXd Error_X = Xsig_pred_.array().colwise() - x_.array();
+  Error_X.row(3).unaryExpr(&Tools::NormalizeAngle);
+  MatrixXd WeightedError_X = Error_X.array().rowwise() * weights_.array().transpose();
+  
   MatrixXd Error_Z = Zsig_pred.array().colwise() - z_pred.array();
+  Error_Z.row(1).unaryExpr(&Tools::NormalizeAngle);
+
   Tc = WeightedError_X * Error_Z.transpose();
 
 
@@ -289,7 +300,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   MatrixXd K = Tc * S.inverse(); 
 
   //update state mean and covariance matrix
-  x_ = x_ + K * (z-z_pred);
+  VectorXd y = z-z_pred;
+  y.row(1).unaryExpr(&Tools::NormalizeAngle);
+  x_ = x_ + K * y;
   P_ = P_ - K * S * K.transpose();
 }
 
