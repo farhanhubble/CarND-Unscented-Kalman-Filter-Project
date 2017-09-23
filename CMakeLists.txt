@@ -22,5 +22,5 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 
 add_executable(UnscentedKF ${sources})
-
+set(CMAKE_BUILD_TYPE Debug)
 target_link_libraries(UnscentedKF z ssl uv uWS)
