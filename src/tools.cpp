@@ -9,12 +9,16 @@ Tools::Tools() {}
 
 Tools::~Tools() {}
 
-VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
-                              const vector<VectorXd> &ground_truth) {
-  /**
-  TODO:
-    * Calculate the RMSE here.
-  */
+VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth){
+  assert( (estimations.size() !=0 ) && (estimations.size() == ground_truth.size()) );
+   
+  VectorXd RMSE = VectorXd::Zero(estimations[0].size());
+  for(int i=0; i<estimations.size(); i++){
+    VectorXd error = estimations[i]-ground_truth[i];
+    error = error.array() * error.array();
+    RMSE += error;
+  }
+  return RMSE;
 }
 
 double Tools::NormalizeAngle(const double theta){
