@@ -124,7 +124,7 @@ void UKF::Prediction(double delta_t) {
   }
 
   // Construct the process noise covariance matrix;
-  Eigen::MatrixXd Q;
+  Eigen::MatrixXd Q(2,2);
   Q << std_a_*std_a_, 0,
        0, std_yawdd_*std_yawdd_;
   // Construct augmented covariance matrix P_aug.
