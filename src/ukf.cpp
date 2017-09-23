@@ -137,7 +137,7 @@ void UKF::Prediction(double delta_t) {
   A = A * sqrt(lambda_+n_aug_);
 
   // Construct the sigma point matrix X_sigma.
-  MatrixXd X_sigma = MatrixXd(n_aug_,n_aug_);
+  MatrixXd X_sigma = MatrixXd(n_aug_,n_sigma_);
   // Fill first column with the augmented mean state vector x_aug.
   X_sigma.col(0) =  x_aug;
   // Fill second to n_aug columns  with x_aug+A;
