@@ -91,6 +91,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   if(is_initialized_ == false){ 
     initialize_state(meas_package);
+    is_initialized_ = true;
   }
   else{
     double delta_t_secs = (meas_package.timestamp_ - time_us_) * 1e-6;
