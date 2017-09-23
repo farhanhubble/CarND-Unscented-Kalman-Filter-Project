@@ -236,7 +236,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   // Compute the measurement noise covariancce matrix R.
   MatrixXd R = MatrixXd::Zero(n_z_,n_z_);
-  R.diagonal() << std_radr_*std_radr_, std_radphi_*std_radphi_,  std_radrd_*std_radrd_;
+  R.diagonal() << std_laspx_*std_laspx_, std_laspy_*std_laspy_;
   
   //Calculate measurement covariance matrix S as weighted covariance of the 
   // prediction space sigma point matrix Zsig_pred.
