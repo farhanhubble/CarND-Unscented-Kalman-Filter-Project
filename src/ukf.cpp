@@ -66,7 +66,7 @@ UKF::UKF() {
   // Sigma point weights.
   weights_ = VectorXd(n_sigma_);
   weights_.head(1) << lambda_ / (lambda_ + n_aug_);
-  weights_.tail(n_sigma_-1) << 1 / (2*(lambda_ + n_aug_));
+  weights_.tail(n_sigma_-1).fill(1 / (2*(lambda_ + n_aug_)));
 
   // Predicted sigma point matrix.
   Xsig_pred_ = MatrixXd(n_x_,n_sigma_);
