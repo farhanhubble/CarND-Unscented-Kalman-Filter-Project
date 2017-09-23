@@ -190,7 +190,7 @@ void UKF::Prediction(double delta_t) {
     }
 
     // Fill in the Sigma point prediction matrix.
-    Xsig_pred_.col(i) = X_sigma.col(i) + update + noise;
+    Xsig_pred_.col(i) = X_sigma.col(i).head(n_x_) + update + noise;
 
     // Calculate mean state vector as weighted mean of columns of the 
     // **predicted** sigma points matrix.
