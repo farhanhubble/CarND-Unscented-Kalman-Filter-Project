@@ -167,7 +167,7 @@ void UKF::Prediction(double delta_t) {
             // Effect of tangential acceleration tangential velocity.
             nu_tang * delta_t,
             // Effect of angular acceleration on turn angle.
-            0.5 * nu_norm * delta_t * delta_t;
+            0.5 * nu_norm * delta_t * delta_t,
             // Effect of angular acceleration on angular velocity.
             nu_norm * delta_t;
 
