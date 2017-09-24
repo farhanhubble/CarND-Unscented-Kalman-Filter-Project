@@ -103,7 +103,10 @@ int main()
     	  gt_values(1) = y_gt; 
     	  gt_values(2) = vx_gt;
     	  gt_values(3) = vy_gt;
-    	  ground_truth.push_back(gt_values);
+        ground_truth.push_back(gt_values);
+        #if(__VERBOSE__ == 2)
+        cout << "Ground truth: " <<gt_values.transpose() <<endl;
+        #endif
           
           //Call ProcessMeasurment(meas_package) for Kalman filter
     	  ukf.ProcessMeasurement(meas_package);    	  
@@ -125,7 +128,10 @@ int main()
     	  estimate(2) = v1;
     	  estimate(3) = v2;
     	  
-    	  estimations.push_back(estimate);
+        estimations.push_back(estimate);
+        #if(__VERBOSE__ == 2)
+        cout << "Estimates: " <<estimate.transpose() <<endl;
+        #endif
 
     	  VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
 
