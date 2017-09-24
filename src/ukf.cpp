@@ -25,10 +25,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.3;
+  std_a_ = 0.9;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.3;
+  std_yawdd_ = 0.9;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -96,19 +96,28 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   else{
     double delta_t_secs = (meas_package.timestamp_ - time_us_) * 1e-6;
     Prediction(delta_t_secs);
+    #if(__VERBOSE__==3)
+    cout << "Predicted state: " << x_.transpose() << endl;
+    #endif
 
     if(meas_package.sensor_type_ == MeasurementPackage::RADAR){ 
       UpdateRadar(meas_package); 
+      #if(__VERBOSE__==3)
+      cout << "Radar Updated State: " << x_.transpose() << endl;
+      #endif
     }
     else if(meas_package.sensor_type_ == MeasurementPackage::LASER){
       UpdateLidar(meas_package);
+      #if(__VERBOSE__==3)
+      cout << "Lidar Updated State: " << x_.transpose() << endl;
+      #endif
     }
   }
 
   time_us_ = meas_package.timestamp_;
 
-  #if defined(__VERBOSE__)
-  cout << "Predicted state: " << x_.transpose() << endl;
+  #if(__VERBOSE__==3)
+  cout << endl << endl << endl;
   #endif
 }
 
@@ -177,7 +186,7 @@ void UKF::Prediction(double delta_t) {
     // Compute update vector.
                             
     MatrixXd update(n_x_,1);
-    if(psi_dot == 0){
+    if(fabs(psi_dot) < 0.001){
         update << v*cos(psi)*delta_t,
                v*sin(psi)*delta_t,
                0,
@@ -198,18 +207,15 @@ void UKF::Prediction(double delta_t) {
     // Calculate mean state vector as weighted mean of columns of the 
     // **predicted** sigma points matrix.
     x_ = ( Xsig_pred_.array().rowwise() * weights_.array().transpose() ).rowwise().sum();
-    // Normalize angles.
-    x_.row(3) = x_.row(3).unaryExpr(&Tools::NormalizeAngle);
 
 
     // Calculate state covariance matrix as weighted covariance of the rows
     // of the **predicted** sigma points matrix.
     MatrixXd Error = Xsig_pred_.array().colwise() - x_.array();
+    Error.row(3) = Error.row(3).unaryExpr(&Tools::NormalizeAngle);
     MatrixXd WeightedError = Error.array().rowwise() * weights_.array().transpose();
-    P_ = WeightedError * Error.transpose();
+    P_ = WeightedError * Error.transpose(); 
   }
-
-  cout << "Predicted sigma points:\n" << Xsig_pred_ << endl;
 }
 
 /**
