@@ -18,6 +18,9 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations, const vector<
     error = error.array() * error.array();
     RMSE += error;
   }
+
+  RMSE = RMSE / estimations.size();
+  RMSE = RMSE.array().sqrt();
   return RMSE;
 }
 
